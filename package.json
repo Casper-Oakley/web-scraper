@@ -1,0 +1,16 @@
+{
+  "name": "web-scraper",
+  "version": "1.0.0",
+  "description": "A web scraper designed to generate sitemaps. Developed for gocardless",
+  "main": "app.js",
+  "scripts": {
+    "test": "nodejs app.js"
+  },
+  "keywords": [
+    "Web",
+    "Scraper",
+    "NodeJS"
+  ],
+  "author": "Casper Oakley",
+  "license": "MIT"
+}
