@@ -3,6 +3,7 @@ var request = require('request'),
 
 
 var previousUrls;
+var count = 0;
 
 /** Module contains a function to be called to scrape,
  * passing in inputs
@@ -23,36 +24,44 @@ module.exports = function(currentUrl, targetDomain, callback) {
  *
  */
 var scrape = function(currentUrl, targetDomain, callback) {
-  console.log(currentUrl);
+  console.log(currentUrl + ' ' + (++count));
   previousUrls.push(currentUrl);
-  request(currentUrl, function(err, res, body) {
+  //Request ONLY the headers. We want to check the content type is html before actually getting it!
+  request.head(currentUrl, function(err, res) {
     if(err || !res.headers || !res.headers['content-type']) {
       console.log('Error retrieving url: ' + currentUrl + '. ' + err);
-      return null;
+      return callback(null, {url: currentUrl, mimetype: 'N/A', children: null});
     } else {
       //If successfully recieved, match on content type (without additional parameters):
       var mimetype = res.headers['content-type'].split(';')[0];
       switch(res.headers['content-type'].split(';')[0]) {
-        //On html, scrape for URLs, then recurse
+        //If target is html, download the html, then scrape and recurse
         case 'text/html':
-          var urlList = parseHtml(body, targetDomain);
-          //Remove any previously visited URLs
-          urlList = urlList.filter(function(e) {
-            return previousUrls.indexOf(e) == -1;
-          });
-          //For each URL, recurse, then compile into JSON and return
-          //Using async as request NPM is IO non blocking - can download in parallel
-          async.map(urlList, function(e, cb) {
-            scrape(e, targetDomain, cb);
-          }, function(err, results) {
+          request(currentUrl, function(err, res, body) {
             if(err) {
-              console.log(err);
-              callback(err, null);
+              console.log('Error retrieving body for url: ' + currentUrl + '. ' + err);
+              return null;
             } else {
-              callback(null, {
-                url: currentUrl,
-                mimetype: mimetype,
-                children: results
+              var urlList = parseHtml(body, currentUrl, targetDomain);
+              //Remove any previously visited URLs
+              urlList = urlList.filter(function(e) {
+                return previousUrls.indexOf(e) == -1;
+              });
+              //For each URL, recurse, then compile into JSON and return
+              //Using async as request NPM is IO non blocking - can download in parallel
+              async.map(urlList, function(e, cb) {
+                scrape(e, targetDomain, cb);
+              }, function(err, results) {
+                if(err) {
+                  console.log('Unexpected error: ' + err);
+                  callback(err, null);
+                } else {
+                  callback(null, {
+                    url: currentUrl,
+                    mimetype: mimetype,
+                    children: results
+                  });
+                }
               });
             }
           });
@@ -69,14 +78,19 @@ var scrape = function(currentUrl, targetDomain, callback) {
  * Function which extracts any links from given html
  * 
  * @param {string} html A full body of html
+ * @param {string} calledUrl the URL of the function which called it
  * @param {string} targetDomain The domain to scrape
  * 
  */
-var parseHtml = function(html, targetDomain) {
+var parseHtml = function(html, calledUrl, targetDomain) {
   //Long regex which filters URLs according to https://www.w3.org/Addressing/URL/url-spec.txt
-  var listOfUrls = html.match(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g);
+  //var listOfUrls = html.match(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g);
+  var listOfUrls = html.match(/href="[^> #"]+/g);
   //If there exists any urls
   if(listOfUrls) {
+    listOfUrls = listOfUrls.map(function(e) {
+      return calledUrl + e.replace(/href="/, '').replace(/https?:\/\/[^/]*/,'');
+    });
     //Remove any non target domain entries
     var targetRegex = new RegExp(targetDomain);
     listOfUrls = listOfUrls.filter(function(e) {
@@ -84,7 +98,7 @@ var parseHtml = function(html, targetDomain) {
     });
     //Remove any trailing slashes and set all to http (?)
     listOfUrls = listOfUrls.map(function(e) {
-      return e.replace(/\/$/,'').replace(/https?/,'http');
+      return e.replace(/\/$/,'');//.replace(/https?/,'http');
     });
     //Filter out unnecessary terms
     listOfUrls = listOfUrls.filter(function(e, i) {
