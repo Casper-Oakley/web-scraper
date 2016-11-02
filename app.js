@@ -26,7 +26,7 @@ rl.on('line', function(line) {
         debug('Unexpected Error: ' + err);
       } else {
         jsonfile.writeFile(path.resolve(__dirname, 'sitemaps/' + domain + '.json'), res, {spaces: 2}, function(err) {
-          console.log('Sitemap successfully written to ' + path.resolve(__dirname, domain + '.json'));
+          console.log('Sitemap successfully written to ' + path.resolve(__dirname, 'sitemaps/' + domain + '.json'));
           process.exit(0);
         });
       }
