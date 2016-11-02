@@ -1,18 +1,26 @@
-var scraper = require('./scraper'),
-    debug   = require('debug')('app'),
-    util    = require('util');
+var scraper  = require('./scraper'),
+    debug    = require('debug')('app'),
+    jsonfile = require('jsonfile'),
+    path     = require('path'),
+    util     = require('util');
 
-scraper('http://gocardless.com', 'gocardless.com', 60, function(err, res) {
-//scraper('https://stallman.org', 'stallman.org', function(err, res) {
+var domain = 'baetica-seguros.com';
+var startingUrl = 'http://baetica-seguros.com/uk/index.html';
+//var domain = 'casperoakley.com';
+//var startingUrl = 'http://casperoakley.com/tests/test1/index.html';
+//var domain = 'gocardless.com';
+//var startingUrl = 'http://gocardless.com';
+
+//scraper.scrape('http://casperoakley.com/tests/test1/index.html', 'casperoakley.com', -1, function(err, res) {
+//scraper.scrape('https://stallman.org', 'stallman.org', -1, function(err, res) {
+scraper.scrape(startingUrl, domain, -1, function(err, res) {
+//scraper.scrape('https://w3schools.com', 'w3schools.com', -1, function(err, res) {
   if(err) {
-    debug('FFUCKED IT' + err);
+    debug('Unexpected Error: ' + err);
   } else {
-    console.log(util.inspect(res, {showHidden: false, depth: null}))
+    jsonfile.writeFile(path.resolve(__dirname, 'sitemaps/' + domain + '.json'), res, {spaces: 2}, function(err) {
+      console.log('Sitemap successfully written to ' + path.resolve(__dirname, domain + '.json'));
+    });
   }
 });
 
-process.on('uncaughtException', function (exception) {
-  console.log(exception); // to see your exception details in the console
-  // if you are on production, maybe you can send the exception details to your
-  // email as well ?
-});
