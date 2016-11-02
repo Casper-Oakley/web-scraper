@@ -19,6 +19,22 @@ module.exports = {};
  */
 module.exports.scrape = function(currentUrl, targetDomain, depthLimit, callback) {
   previousUrls = [];
+
+
+  //A non-blocking while loop running to keep the user updated on % complete
+  async.whilst(function() {
+      return completion != 1;
+    }, function (callback) {
+      setTimeout(function() {
+        process.stdout.write('Currently ' + (completion*100) + '% complete (done ' + count + ' sites).\r');
+        callback(null);
+      }, 1000);
+    }, function (err) {
+      if (err) console.log('Unexpected error in while loop: ' + err);
+      console.log('FIN');
+  });
+
+  //Call the helper function, which recurses through each site
   scrape(currentUrl, targetDomain, depthLimit, 1.0, function(err, res) {
     completion = 1;
     process.stdout.write('Currently ' + (1.0*100) + '% complete (done ' + count + ' sites).\r');
@@ -28,17 +44,6 @@ module.exports.scrape = function(currentUrl, targetDomain, depthLimit, callback)
 };
 
 
-//A non-blocking while loop running to keep the user updated on % complete
-async.whilst(function() {
-    return completion != 1;
-  }, function (callback) {
-    setTimeout(function() {
-      process.stdout.write('Currently ' + (completion*100) + '% complete (done ' + count + ' sites).\r');
-      callback(null);
-    }, 1000);
-  }, function (err) {
-    if (err) console.log('Unexpected error in while loop: ' + err);
-});
 
 
 /** Scrape function scrapes a given URL **/
