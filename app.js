@@ -2,25 +2,36 @@ var scraper  = require('./scraper'),
     debug    = require('debug')('app'),
     jsonfile = require('jsonfile'),
     path     = require('path'),
+    readline = require('readline'),
     util     = require('util');
 
-var domain = 'baetica-seguros.com';
-var startingUrl = 'http://baetica-seguros.com/uk/index.html';
-//var domain = 'casperoakley.com';
-//var startingUrl = 'http://casperoakley.com/tests/test1/index.html';
-//var domain = 'gocardless.com';
-//var startingUrl = 'http://gocardless.com';
+var rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
 
-//scraper.scrape('http://casperoakley.com/tests/test1/index.html', 'casperoakley.com', -1, function(err, res) {
-//scraper.scrape('https://stallman.org', 'stallman.org', -1, function(err, res) {
-scraper.scrape(startingUrl, domain, -1, function(err, res) {
-//scraper.scrape('https://w3schools.com', 'w3schools.com', -1, function(err, res) {
-  if(err) {
-    debug('Unexpected Error: ' + err);
+//App.js itself simply asks for input and passes it to the scraper
+console.log('Please enter the URL you wish to scan:');
+rl.on('line', function(line) {
+  startingUrl = line;
+  //Domain is domain name + TLD. startingUrl is entire URL
+  domainParts = startingUrl.replace(/^[^/]*\/\/([^/]*)\/?.*$/, '$1').split('.');
+  if(domainParts.length < 2 || domainParts[domainParts.length-2] + '.' + domainParts[domainParts.length-1] === startingUrl) {
+    console.log('Invalid URL: ' + startingUrl + '. Exiting...');
+    process.exit(1);
   } else {
-    jsonfile.writeFile(path.resolve(__dirname, 'sitemaps/' + domain + '.json'), res, {spaces: 2}, function(err) {
-      console.log('Sitemap successfully written to ' + path.resolve(__dirname, domain + '.json'));
+    domain = domainParts[domainParts.length-2] + '.' + domainParts[domainParts.length-1];
+    scraper.scrape(startingUrl, domain, -1, function(err, res) {
+      if(err) {
+        debug('Unexpected Error: ' + err);
+      } else {
+        jsonfile.writeFile(path.resolve(__dirname, 'sitemaps/' + domain + '.json'), res, {spaces: 2}, function(err) {
+          console.log('Sitemap successfully written to ' + path.resolve(__dirname, domain + '.json'));
+          process.exit(0);
+        });
+      }
     });
   }
 });
+
 
