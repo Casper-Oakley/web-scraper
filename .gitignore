@@ -38,3 +38,5 @@ jspm_packages
 
 # Ignore any generated sitemaps
 sitemaps/*
+
+!sitemaps/.gitkeep
