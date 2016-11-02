@@ -7,6 +7,8 @@ var previousUrls;
 var count = 0;
 var completion = 0;
 
+module.exports = {};
+
 /** Module contains a function to be called to scrape,
  * passing in inputs
  * @param {string} currentUrl The URL in which to scrape
@@ -15,18 +17,28 @@ var completion = 0;
  * @param {Function} callback a callback procedure to be called once finished. Takes in two arguments,
  *                   (err, res)
  */
-module.exports = function(currentUrl, targetDomain, depthLimit, callback) {
+module.exports.scrape = function(currentUrl, targetDomain, depthLimit, callback) {
   previousUrls = [];
-  setInterval(function() {
-    process.stdout.write('Currently ' + (completion*100) + '% complete (done ' + count + ' sites).\r');
-  }, 1000);
   scrape(currentUrl, targetDomain, depthLimit, 1.0, function(err, res) {
+    completion = 1;
     process.stdout.write('Currently ' + (1.0*100) + '% complete (done ' + count + ' sites).\r');
+    console.log();
     callback(err, res);
   });
 };
 
 
+//A non-blocking while loop running to keep the user updated on % complete
+async.whilst(function() {
+    return completion != 1;
+  }, function (callback) {
+    setTimeout(function() {
+      process.stdout.write('Currently ' + (completion*100) + '% complete (done ' + count + ' sites).\r');
+      callback(null);
+    }, 1000);
+  }, function (err) {
+    if (err) console.log('Unexpected error in while loop: ' + err);
+});
 
 
 /** Scrape function scrapes a given URL **/
@@ -113,60 +125,77 @@ var parseHtml = function(html, calledUrl, targetDomain) {
   var listOfUrls = html.match(/(href|src)="[^> #"]+/g);
   //If there exists any urls
   if(listOfUrls) {
-    listOfUrls = listOfUrls.map(function(e) {
-      //URLs are case inspecific, but regex isn't
-      e = e.toLowerCase();
-      //On absolute link, get the entire absolute link
-      if(e.match(/https?:\/\/[^/]*/)) {
-        return e.replace(/(href|src)="/, '');
-      //Two slashes at the start generally means it is sourced from a CDN and thus should be treated as an absolute link
-      } else if(e.match(/^(href|src)="\/\//)) {
-        return 'http:' + e.replace(/(href|src)="/, '');
-      //A single slash at the start of a path always dictates 'relative to the root'
-      } else if(e.match(/^(href|src)="\//)) {
-        return 'http://' + targetDomain + e.replace(/(href|src)="/, '');
-      } else {
-        //On relative link starting without a /, it is assumed that it is relative to the current location, and so is added to the current location
-        return calledUrl + '/' + e.replace(/(href|src)="/, '');
-      }
-    });
-    //Remove any non target domain entries
-    var targetRegex = new RegExp('^https?://[a-zA-Z0-9.]*'+targetDomain);
-    listOfUrls = listOfUrls.filter(function(e) {
-      return e.match(targetRegex);
-    });
-    //Remove any mailto/tel links
-    listOfUrls = listOfUrls.filter(function(e) {
-      return !e.match(/(mailto:|tel:)/);
-    });
-    //add any missing trailing slashes and set all to http (?)
-    listOfUrls = listOfUrls.map(function(e) {
-      return e.replace(/\/$/,'');//.replace(/https?/,'http');
-    });
-    //Filter out duplicate terms
-    listOfUrls = listOfUrls.filter(function(e, i) {
-      return listOfUrls.indexOf(e) == i;
-    });
-
-    //Finally, remove any '.' and '..' references
-    // a URL such as /hello/world/../../index.html
-    // should produce /index.html
-    //Must be done with a loop, as regex cannot model
-    // the actions of a pushdown automata
-    listOfUrls = listOfUrls.map(function(e) {
-      //While there is still a /.. remove it
-      while(e.match(/\/\.\./)) {
-        //If the previous URL segment contains a .html,
-        //remove that aswell
-        e = e.replace(/\/[^/]*(\/[^/]*.html)?\/\.\./, '');
-        console.log(e);
-      }
-      //After removing all /.. we remove all /.
-      return e.replace(/\/\./, '');
-    });
-
+    listOfUrls = filterHtml(listOfUrls, calledUrl, targetDomain);
   } else {
     listOfUrls = [];
   }
   return listOfUrls;
+};
+
+var filterHtml = function(listOfUrls, calledUrl, targetDomain) {
+  //Remove any query parameters
+  calledUrl = calledUrl.replace(/\?[^/]*$/, '');
+  //filter input calledUrl to ensure it has no trailing slash and if it's last is a .html, .css, asp, aspx .xml or .php, remove it
+  calledUrl = calledUrl.replace(/(\/)?(|[^/]*\.html|[^/]*\.css|[^/]*\.xml|[^/]*\.php|[^/]*\.aspx?)$/, '');
+  listOfUrls = listOfUrls.map(function(e) {
+    //URLs are case inspecific, but regex isn't
+    e = e.toLowerCase();
+    //On absolute link, get the entire absolute link
+    if(e.match(/https?:\/\/[^/]*/)) {
+      return e.replace(/(href|src)="/, '');
+    //Two slashes at the start generally means it is sourced from a CDN and thus should be treated as an absolute link
+    } else if(e.match(/^(href|src)="\/\//)) {
+      return 'http:' + e.replace(/(href|src)="/, '');
+    //A single slash at the start of a path always dictates 'relative to the root'
+    } else if(e.match(/^(href|src)="\//)) {
+      return 'http://' + targetDomain + e.replace(/(href|src)="/, '');
+    } else {
+      //On relative link starting without a /, it is assumed that it is relative to the current location, and so is added to the current location
+      return calledUrl + '/' + e.replace(/(href|src)="/, '');
+    }
+  });
+  //Remove any non target domain entries
+  var targetRegex = new RegExp('^https?://[a-zA-Z0-9.]*'+targetDomain);
+  listOfUrls = listOfUrls.filter(function(e) {
+    return e.match(targetRegex);
+  });
+  //Remove any mailto/tel links
+  listOfUrls = listOfUrls.filter(function(e) {
+    return !e.match(/(mailto:|tel:)/);
+  });
+  //Remove any missing trailing slashes and set all to http (?)
+  listOfUrls = listOfUrls.map(function(e) {
+    return e.replace(/\/$/,'');//.replace(/https?/,'http');
+  });
+  //Filter out duplicate terms
+  listOfUrls = listOfUrls.filter(function(e, i) {
+    return listOfUrls.indexOf(e) == i;
+  });
+
+  //Finally, remove any '.' and '..' references
+  // a URL such as /hello/world/../../index.html
+  // should produce /index.html
+  //Must be done with a loop, as regex cannot model
+  // the actions of a pushdown automata
+  listOfUrls = listOfUrls.map(function(e) {
+    //While there is still a /.. remove it
+    while(e.match(/\/\.\./)) {
+      //If the previous URL segment contains a .html,
+      //remove that aswell
+      e = e.replace(/\/[^/]*(\/[^/]*.html)?\/\.\./, '');
+    }
+    //After removing all /.. we remove all /.
+    return e.replace(/\/\./, '');
+  });
+
+  return listOfUrls;
+
+};
+
+
+/**
+ * exported function wrapper for filterHtml for testing parts of the parseHtml function
+ */
+module.exports.testParseHtml = function(listOfUrls, calledUrl, targetDomain) {
+  return filterHtml(listOfUrls, calledUrl, targetDomain);
 };

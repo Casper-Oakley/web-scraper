@@ -1,0 +1,142 @@
+[
+  {
+    "urls":         ["href=\"http://gocardless.com"],
+    "calledUrl":    "http://gocardless.com", 
+    "targetDomain": "gocardless.com",
+    "results":      ["http://gocardless.com"],
+    "comment":      "Absolute link"
+  },
+  {
+    "urls":         ["href=\"/gocardless"],
+    "calledUrl":    "http://gocardless.com", 
+    "targetDomain": "gocardless.com",
+    "results":      ["http://gocardless.com/gocardless"],
+    "comment":      "Relative link"
+  },
+  {
+    "urls":         ["href=\"/gocardless.html"],
+    "calledUrl":    "http://gocardless.com", 
+    "targetDomain": "gocardless.com",
+    "results":      ["http://gocardless.com/gocardless.html"],
+    "comment":      "Relative link pointing to file"
+  },
+  {
+    "urls":         ["src=\"http://gocardless.com/gocardless/gocardless.css"],
+    "calledUrl":    "http://gocardless.com", 
+    "targetDomain": "gocardless.com",
+    "results":      ["http://gocardless.com/gocardless/gocardless.css"],
+    "comment":      "Absolute style link"
+  },
+  {
+    "urls":         ["src=\"//gocardless.com/gocardless/gocardless.css"],
+    "calledUrl":    "http://gocardless.com", 
+    "targetDomain": "gocardless.com",
+    "results":      ["http://gocardless.com/gocardless/gocardless.css"],
+    "comment":      "CDN css link"
+  },
+  {
+    "urls":         ["src=\"/gocardless/gocardless.css"],
+    "calledUrl":    "http://gocardless.com", 
+    "targetDomain": "gocardless.com",
+    "results":      ["http://gocardless.com/gocardless/gocardless.css"],
+    "comment":      "Relative style link"
+  },
+  {
+    "urls":         ["src=\"https://jquery.com/jquery.min.css"],
+    "calledUrl":    "http://gocardless.com", 
+    "targetDomain": "gocardless.com",
+    "results":      [],
+    "comment":      "Absolute css link to external location"
+  },
+  {
+    "urls":         ["src=\"//flimflam.com/flim.css"],
+    "calledUrl":    "http://gocardless.com", 
+    "targetDomain": "gocardless.com",
+    "results":      [],
+    "comment":      "CDN css link to external location"
+  },
+  {
+    "urls":         ["src=\"/helloworld/hello"],
+    "calledUrl":    "http://gocardless.com/hi", 
+    "targetDomain": "gocardless.com",
+    "results":      ["http://gocardless.com/helloworld/hello"],
+    "comment":      "CalledUrl being some folders deep with slash starting on url"
+  },
+  {
+    "urls":         ["src=\"helloworld/hello"],
+    "calledUrl":    "http://gocardless.com/hi", 
+    "targetDomain": "gocardless.com",
+    "results":      ["http://gocardless.com/hi/helloworld/hello"],
+    "comment":      "CalledUrl being some folders deep with no slash starting on url"
+  },
+  {
+    "urls":         ["src=\"helloworld/hello"],
+    "calledUrl":    "http://gocardless.com/hi/", 
+    "targetDomain": "gocardless.com",
+    "results":      ["http://gocardless.com/hi/helloworld/hello"],
+    "comment":      "CalledUrl being some folders deep with an extra slash"
+  },
+  {
+    "urls":         ["src=\"/helloworld/hello/"],
+    "calledUrl":    "http://gocardless.com", 
+    "targetDomain": "gocardless.com",
+    "results":      ["http://gocardless.com/helloworld/hello"],
+    "comment":      "Trailing slash removed"
+  },
+  {
+    "urls":         ["href=\"//gocardless/gocardless.html"],
+    "calledUrl":    "http://gocardless.com", 
+    "targetDomain": "gocardless.com",
+    "results":      [],
+    "comment":      "Odd amount of slashes. Treated as an absolute link as so filtered."
+  },
+  {
+    "urls":         ["href=\"/gocardless/gocardless.html"],
+    "calledUrl":    "http://gocardless.com", 
+    "targetDomain": "gocardless.com",
+    "results":      ["http://gocardless.com/gocardless/gocardless.html"],
+    "comment":      "Relative link two locations away"
+  },
+  {
+    "urls":         ["href=\"mailto:casper_oakley@hotmail.com"],
+    "calledUrl":    "http://gocardless.com", 
+    "targetDomain": "gocardless.com",
+    "results":      [],
+    "comment":      "Mailto link"
+  },
+  {
+    "urls":         ["href=\"tel:+447884036188"],
+    "calledUrl":    "http://gocardless.com", 
+    "targetDomain": "gocardless.com",
+    "results":      [],
+    "comment":      "phone link"
+  },
+  {
+    "urls":         ["href=\"http://gocardless.com/about", "href=\"about"],
+    "calledUrl":    "http://gocardless.com", 
+    "targetDomain": "gocardless.com",
+    "results":      ["http://gocardless.com/about"],
+    "comment":      "Duplicate links (both absolute and relative)"
+  },
+  {
+    "urls":         ["href=\"http://gocardless.com/about/./about.png"],
+    "calledUrl":    "http://gocardless.com", 
+    "targetDomain": "gocardless.com",
+    "results":      ["http://gocardless.com/about/about.png"],
+    "comment":      "Absolute link involving folder style \"same folder\" direction"
+  },
+  {
+    "urls":         ["href=\"http://gocardless.com/about/../about"],
+    "calledUrl":    "http://gocardless.com", 
+    "targetDomain": "gocardless.com",
+    "results":      ["http://gocardless.com/about"],
+    "comment":      "Absolute link involving folder style \"up\" direction"
+  },
+  {
+    "urls":         ["href=\"https://gocardless.com"],
+    "calledUrl":    "http://gocardless.com", 
+    "targetDomain": "gocardless.com",
+    "results":      ["https://gocardless.com"],
+    "comment":      "Absolute with https different from called URL"
+  }
+]
